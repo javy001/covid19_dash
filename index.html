@@ -1,58 +1,119 @@
 <!doctype html>
 
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
+    <meta charset="utf-8">
 
-  <title>COVID19 Dash</title>
-  <script src="https://code.highcharts.com/highcharts.js"></script>
-  <style>
-      body{
-          padding: 25px;
-          font-family: 'Open Sans', sans-serif;
-          font-size: 1.1em;
-      }
-      .card {
-          margin: 10px;
-          box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-          height: 500px;
-          width: 85%;
-          border-radius: 7px;
-      }
-      input {
-          border-radius: 5px;
-          height: 20px;
-          margin: 10px;
-          border: 0px;
-          padding: 4px;
-      }
-      p {
-          margin-left: 10px;
-      }
-      select {
-          font-size: 1em;
-      }
-      input {
-          font-size: 1em;
-      }
-  </style>
+    <title>COVID19 Dash</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <style>
+        body {
+            padding: 25px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 1.1em;
+        }
 
-<link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto;
+            grid-template-areas:
+                "header header . "
+                "country_chart country_chart summary"
+                "chart1 chart1 chart1"
+                "chart2 chart2 chart2"
+                "chart3 chart3 chart3";
+        }
+
+        .card {
+            margin: 10px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            height: 500px;
+            border-radius: 7px;
+            background-color: white;
+            padding: 10px;
+            ;
+        }
+
+        .header {
+            grid-area: header;
+            margin: 10px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            border-radius: 7px;
+            padding: 10px;
+            background-color: white;
+        }
+
+        .hline {
+            height: 1px;
+            background-color: #bfbfbf;
+        }
+
+        #summary_title {
+            text-align: center;
+        }
+
+        .summary_item {
+            padding: 8px;
+        }
+        .bad {
+            color: red;
+        }
+        .good {
+            color: green;
+        }
+        input {
+            border-radius: 5px;
+            height: 20px;
+            margin: 10px;
+            border-style: solid;
+            border-color: #b5b5b5;
+            border-width: 1px;
+            padding: 4px;
+        }
+
+        p {
+            margin-left: 10px;
+        }
+
+        select {
+            font-size: 1em;
+        }
+
+        input {
+            font-size: 1em;
+        }
+    </style>
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
 
 
 </head>
 
 <body bgcolor="#d1cfce">
-    <p>Filter by number of cases
-         <input type="text" id="limit" name="limit" value="5000" onchange="change_limit()">
-         <br>
-         Country <select id="country" onchange="change_country()"></select>
-    </p>
-    <div class="card" id="country_chart" ></div>
-    <div class="card" id="chart1" ></div>
-    <div class="card" id="chart2" ></div>
-    <div class="card" id="chart3" ></div>
-
+    <div class="container">
+        <div class="header">Filter by number of cases
+            <input type="text" id="limit" name="limit" value="5000" onchange="change_limit()">
+            <br>
+            Country <select id="country" onchange="change_country()"></select>
+        </div>
+        <div class="card" style="grid-area: country_chart;" id="country_chart"></div>
+        <div class="card" style="grid-area: summary;" id="summary">
+            <div id="summary_title" class="summary_item"></div>
+            <div class="hline"></div>
+            <div id="total_cases" class="summary_item"></div>
+            <div id="cases_d_growth" class="summary_item"></div>
+            <div id="cases_w_growth" class="summary_item"></div>
+            <div class="hline"></div>
+            <div id="total_deaths" class="summary_item"></div>
+            <div id="deaths_d_growth" class="summary_item"></div>
+            <div id="deaths_w_growth" class="summary_item"></div>
+        </div>
+        <div class="card" style="grid-area: chart1;" id="chart1"></div>
+        <div class="card" style="grid-area: chart2;" id="chart2"></div>
+        <div class="card" style="grid-area: chart3;" id="chart3"></div>
+    </div>
     <script>
         let has_loaded = false;
 
@@ -61,9 +122,13 @@
         }
 
         function change_country() {
-            value = document.getElementById('country').value;
             fetch_data();
         }
+
+        function formatNumber(num) {
+            return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+        }
+
         function parse_data(data) {
             let limit = document.getElementById("limit").value;
             cleaned = [];
@@ -73,40 +138,41 @@
             countries = [];
             for (let c in data) {
                 countries.push(c);
-                temp = {'name': c, 'data': [], keep: false};
-                t100 = {'name': c, 'data': [], 'keep': false};
-                tempD = {name: c, data: [], keep: false};
-                for (var i=0; i< data[c].length; i++) {
+                temp = { name: c, confirmed: [], deaths: [], dRate: [], t100: [], keep: false };
+                // t100 = {'name': c, 'data': [], 'keep': false};
+                // tempD = {name: c, data: [], keep: false};
+                for (var i = 0; i < data[c].length; i++) {
                     let day = data[c][i];
-                    if(day['confirmed'] > limit) {
+                    if (day['confirmed'] > limit) {
                         temp['keep'] = true;
-                        t100['keep'] = true;
-                        tempD['keep'] = true;
+                        // t100['keep'] = true;
+                        // tempD['keep'] = true;
                     }
                     ds = day['date'].split('-');
-                    date = Date.UTC(ds[0], ds[1]-1, ds[2])
-                    temp['data'].push([date, day['confirmed']]);
-                    tempD['data'].push([date, day['deaths']/(day['confirmed']/100)])
-                    if(day['confirmed']>=100){
-                        t100['data'].push(day['confirmed']);
+                    date = Date.UTC(ds[0], ds[1] - 1, ds[2])
+                    temp['confirmed'].push([date, day['confirmed']]);
+                    temp['dRate'].push([date, day['deaths'] / (day['confirmed'] / 100)])
+                    temp['deaths'].push([date, day['deaths']]);
+                    if (day['confirmed'] >= 100) {
+                        temp['t100'].push(day['confirmed']);
                     }
                 }
 
-                if(temp['keep']===true) {
+                if (temp['keep'] === true) {
                     cleaned.push(temp);
-                    d100.push(t100);
-                    deaths.push(tempD);
+                    // d100.push(t100);
+                    // deaths.push(tempD);
                 }
-                overall.push(temp);  
+                overall.push(temp);
             }
             // build country selector
             countries.sort();
-            if(has_loaded===false) {
+            if (has_loaded === false) {
                 let selector = document.getElementById('country');
-                for(var i=0;i< countries.length; i++) {
+                for (var i = 0; i < countries.length; i++) {
                     let option = document.createElement('option');
                     option.setAttribute('value', countries[i]);
-                    if(countries[i]==='US'){
+                    if (countries[i] === 'US') {
                         option.setAttribute('selected', true);
                     }
                     t = document.createTextNode(countries[i]);
@@ -116,30 +182,56 @@
             }
             has_loaded = true;
             country = document.getElementById('country').value;
-            for(var i=0;i<overall.length;i++) {
+            for (var i = 0; i < overall.length; i++) {
                 if (overall[i]['name'] != country) {
                     continue;
                 }
-                build_chart([overall[i]], 'country_chart', 'datetime', overall[i]['name'], 'Cases');
+                build_chart([overall[i]], 'confirmed', 'country_chart', 'datetime', overall[i]['name'], 'Cases');
+                build_summary(overall[i]);
             }
+            // console.log(cleaned);
 
-            build_chart(cleaned, 'chart1', 'datetime', 'Cases by Country', 'Cases');
-            build_chart(d100, 'chart2', 'linear', 'Cases since first 100', 'Cases');
-            build_chart(deaths, 'chart3', 'datetime', 'Deaths per 100 Cases', 'Deaths');
+            build_chart(cleaned, 'confirmed', 'chart1', 'datetime', 'Cases by Country', 'Cases');
+            build_chart(cleaned, 't100', 'chart2', 'linear', 'Cases since first 100', 'Cases');
+            build_chart(cleaned, 'dRate', 'chart3', 'datetime', 'Deaths per 100 Cases', 'Deaths');
+        }
+
+        function build_summary(data) {
+            console.log(data);
+            document.getElementById('summary_title').innerHTML = data['name'];
+            let cases = data['confirmed'][data['confirmed'].length - 1][1];
+            let casesM1 = data['confirmed'][data['confirmed'].length - 2][1];
+            let casesM7 = data['confirmed'][data['confirmed'].length - 8][1];
+            let deaths = data['deaths'][data['deaths'].length - 1][1];
+            let deathsM1 = data['deaths'][data['deaths'].length - 2][1];
+            let deathsM7 = data['deaths'][data['deaths'].length - 8][1];
+            let cdd = ((cases/casesM1)-1)*100;
+            let cww = ((cases/casesM7)-1)*100;
+            let ddd = ((deaths/deathsM1)-1)*100;
+            let dww = ((deaths/deathsM7)-1)*100;
+            document.getElementById('total_cases').innerHTML = "Total Cases: " + formatNumber(cases);
+            document.getElementById('cases_d_growth').innerHTML = "d/d: " + formatNumber(cdd.toFixed(2)) + "%";
+            document.getElementById('cases_w_growth').innerHTML = "w/w: " + formatNumber(cww.toFixed(2)) + "%";
+            document.getElementById('total_deaths').innerHTML = "Total Deaths: " + formatNumber(deaths);
+            document.getElementById('deaths_d_growth').innerHTML = "d/d: " + formatNumber(ddd.toFixed(2)) + "%";
+            document.getElementById('deaths_w_growth').innerHTML = "w/w: " + formatNumber(dww.toFixed(2)) + "%";
+
         }
 
         function fetch_data() {
             fetch("https://pomber.github.io/covid19/timeseries.json")
-            .then(response => response.json())
-            .then(json => {
-                console.log(json);
-                parse_data(json);
+                .then(response => response.json())
+                .then(json => {
+                    console.log(json);
+                    parse_data(json);
                 });
         }
-        
-        
-        
-        function build_chart(data, id, chartType, title, yLabel) {
+
+
+        function build_chart(data, series, id, chartType, title, yLabel) {
+            for (var i = 0; i < data.length; i++) {
+                data[i]['data'] = data[i][series];
+            }
             Highcharts.chart(id, {
                 xAxis: {
                     type: chartType
@@ -157,8 +249,9 @@
                             'font-size': "18px"
                         }
                     },
-                    
+
                 },
+
                 chart: {
                     zoomType: 'xy',
                     // backgroundColor: "#999897"
@@ -174,8 +267,8 @@
             });
         }
 
-        fetch_data();
-        
+        fetch_data(); 
     </script>
 </body>
+
 </html>
