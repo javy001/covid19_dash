@@ -16,6 +16,7 @@
           margin: 10px;
           box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
           height: 500px;
+          width: 85%;
           border-radius: 7px;
       }
       input {
@@ -44,6 +45,7 @@
 <body bgcolor="#d1cfce">
     <p>Filter by number of cases
          <input type="text" id="limit" name="limit" value="5000" onchange="change_limit()">
+         <br>
          Country <select id="country" onchange="change_country()"></select>
     </p>
     <div class="card" id="country_chart" ></div>
