@@ -103,12 +103,20 @@
             <div id="summary_title" class="summary_item"></div>
             <div class="hline"></div>
             <div id="total_cases" class="summary_item"></div>
-            <div id="cases_d_growth" class="summary_item"></div>
-            <div id="cases_w_growth" class="summary_item"></div>
+            <div class="summary_item">
+                d/d: <span id="cases_d_growth"></span>
+            </div>
+            <div class="summary_item">
+                w/w: <span id="cases_w_growth"></span>
+            </div>
             <div class="hline"></div>
             <div id="total_deaths" class="summary_item"></div>
-            <div id="deaths_d_growth" class="summary_item"></div>
-            <div id="deaths_w_growth" class="summary_item"></div>
+            <div class="summary_item">
+                d/d: <span id="deaths_d_growth"></span>
+            </div>
+            <div class="summary_item">
+                w/w: <span id="deaths_w_growth"></span>
+            </div>
         </div>
         <div class="card" style="grid-area: chart1;" id="chart1"></div>
         <div class="card" style="grid-area: chart2;" id="chart2"></div>
@@ -132,21 +140,15 @@
         function parse_data(data) {
             let limit = document.getElementById("limit").value;
             cleaned = [];
-            d100 = [];
-            deaths = [];
             overall = [];
             countries = [];
             for (let c in data) {
                 countries.push(c);
                 temp = { name: c, confirmed: [], deaths: [], dRate: [], t100: [], keep: false };
-                // t100 = {'name': c, 'data': [], 'keep': false};
-                // tempD = {name: c, data: [], keep: false};
                 for (var i = 0; i < data[c].length; i++) {
                     let day = data[c][i];
                     if (day['confirmed'] > limit) {
                         temp['keep'] = true;
-                        // t100['keep'] = true;
-                        // tempD['keep'] = true;
                     }
                     ds = day['date'].split('-');
                     date = Date.UTC(ds[0], ds[1] - 1, ds[2])
@@ -160,8 +162,6 @@
 
                 if (temp['keep'] === true) {
                     cleaned.push(temp);
-                    // d100.push(t100);
-                    // deaths.push(tempD);
                 }
                 overall.push(temp);
             }
@@ -186,43 +186,70 @@
                 if (overall[i]['name'] != country) {
                     continue;
                 }
-                build_chart([overall[i]], 'confirmed', 'country_chart', 'datetime', overall[i]['name'], 'Cases');
-                build_summary(overall[i]);
+                build_country_chart(overall[i], 'country_chart', overall[i]['name']);
+                build_summary(overall[i]); 
             }
-            // console.log(cleaned);
 
             build_chart(cleaned, 'confirmed', 'chart1', 'datetime', 'Cases by Country', 'Cases');
             build_chart(cleaned, 't100', 'chart2', 'linear', 'Cases since first 100', 'Cases');
             build_chart(cleaned, 'dRate', 'chart3', 'datetime', 'Deaths per 100 Cases', 'Deaths');
         }
 
-        function build_summary(data) {
-            console.log(data);
-            document.getElementById('summary_title').innerHTML = data['name'];
-            let cases = data['confirmed'][data['confirmed'].length - 1][1];
-            let casesM1 = data['confirmed'][data['confirmed'].length - 2][1];
-            let casesM7 = data['confirmed'][data['confirmed'].length - 8][1];
-            let deaths = data['deaths'][data['deaths'].length - 1][1];
-            let deathsM1 = data['deaths'][data['deaths'].length - 2][1];
-            let deathsM7 = data['deaths'][data['deaths'].length - 8][1];
-            let cdd = ((cases/casesM1)-1)*100;
-            let cww = ((cases/casesM7)-1)*100;
-            let ddd = ((deaths/deathsM1)-1)*100;
-            let dww = ((deaths/deathsM7)-1)*100;
-            document.getElementById('total_cases').innerHTML = "Total Cases: " + formatNumber(cases);
-            document.getElementById('cases_d_growth').innerHTML = "d/d: " + formatNumber(cdd.toFixed(2)) + "%";
-            document.getElementById('cases_w_growth').innerHTML = "w/w: " + formatNumber(cww.toFixed(2)) + "%";
-            document.getElementById('total_deaths').innerHTML = "Total Deaths: " + formatNumber(deaths);
-            document.getElementById('deaths_d_growth').innerHTML = "d/d: " + formatNumber(ddd.toFixed(2)) + "%";
-            document.getElementById('deaths_w_growth').innerHTML = "w/w: " + formatNumber(dww.toFixed(2)) + "%";
+        function get_summary_deltas(data, series, element) {
+            let metric = data[series][data[series].length - 1][1];
+            let m1 = data[series][data[series].length - 2][1];
+            let m2 = data[series][data[series].length - 3][1];
+            let m7 = data[series][data[series].length - 8][1];
+            let m8 = data[series][data[series].length - 9][1];
+            let dd = ((metric/m1)-1)*100;
+            let ww = ((metric/m7)-1)*100;
+            let dd1 = (m1/m2-1)*100;
+            let ww1 = (m1/m8-1)*100;
+            let daily_delta = (dd1-dd).toFixed(2);
+            let weekly_delta = (ww1-ww).toFixed(2);
+            var d_sign = "";
+            let daily_element = document.getElementById(element+'_d_growth');
+            if(daily_delta > 0) {
+                daily_element.classList.remove('good');
+                daily_element.classList.add('bad');
+                d_sign = "+";
+            } else {
+                daily_element.classList.remove('bad');
+                daily_element.classList.add('good');
+            }
+            var w_sign = "";
+            let weekly_element = document.getElementById(element+'_w_growth');
+            if(weekly_delta > 0) {
+                weekly_element.classList.remove('good');
+                weekly_element.classList.add('bad');
+                w_sign = "+";
+            } else {
+                weekly_element.classList.remove('bad');
+                weekly_element.classList.add('good');
+            }
+            if(series === 'confirmed') {
+                document.getElementById('total_cases').innerHTML = "Total Cases: " + formatNumber(metric) + 
+                    " (+"+formatNumber(metric-m1)+")";
+            } else {
+                document.getElementById('total_deaths').innerHTML = "Total Deaths: " + formatNumber(metric) + 
+                    " (+"+formatNumber(metric-m1)+")";
+            }
+            document.getElementById(element+'_d_growth').innerHTML = formatNumber(dd.toFixed(2)) + "%" +
+                " ("+ d_sign + formatNumber(daily_delta)+"%)";
+            document.getElementById(element+'_w_growth').innerHTML = formatNumber(ww.toFixed(2)) + "%" +
+                " ("+ w_sign + formatNumber(weekly_delta) +"%)";
+        }
 
+        function build_summary(data) {
+            document.getElementById('summary_title').innerHTML = data['name'];
+            get_summary_deltas(data, 'confirmed', 'cases');
+            get_summary_deltas(data, 'deaths', 'deaths');
         }
 
         function fetch_data() {
             fetch("https://pomber.github.io/covid19/timeseries.json")
                 .then(response => response.json())
                 .then(json => {
-                    console.log(json);
                     parse_data(json);
                 });
         }
@@ -251,12 +278,63 @@
                     },
 
                 },
-
-                chart: {
-                    zoomType: 'xy',
-                    // backgroundColor: "#999897"
-                },
                 series: data,
+                plotOptions: {
+                    series: {
+                        marker: {
+                            enabled: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function build_country_chart(data, id, title) {
+            Highcharts.chart(id, {
+                xAxis: {
+                    type: 'datetime'
+                },
+                credits: {
+                    enabled: false
+                },
+                tooltip: {
+                    shared: true
+                },
+                title: {
+                    text: title
+                },
+                yAxis: [{
+                    title: {
+                        text: 'Cases',
+                        style: {
+                            'font-size': "18px"
+                        }
+                    },
+
+                },{
+                    title: {
+                        text: 'Deaths',
+                        style: {
+                            'font-size': "18px"
+                        }
+                    },
+                    opposite: true
+                }],
+                series: [
+                    {
+                        name: 'Deaths',
+                        type: 'column',
+                        yAxis: 1,
+                        data: data['deaths']
+
+                    },
+                    {
+                        name: 'Cases',
+                        type: 'line',
+                        data: data['confirmed']
+
+                    }
+                ],
                 plotOptions: {
                     series: {
                         marker: {
