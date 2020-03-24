@@ -151,9 +151,10 @@
                         temp['keep'] = true;
                     }
                     ds = day['date'].split('-');
-                    date = Date.UTC(ds[0], ds[1] - 1, ds[2])
+                    date = Date.UTC(ds[0], ds[1] - 1, ds[2]);
+                    dRate = parseFloat((day['deaths'] / (day['confirmed'] / 100)).toFixed(2));
                     temp['confirmed'].push([date, day['confirmed']]);
-                    temp['dRate'].push([date, day['deaths'] / (day['confirmed'] / 100)])
+                    temp['dRate'].push([date, dRate]);
                     temp['deaths'].push([date, day['deaths']]);
                     if (day['confirmed'] >= 100) {
                         temp['t100'].push(day['confirmed']);
