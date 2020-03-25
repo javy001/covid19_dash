@@ -23,7 +23,8 @@
                 "country_chart country_chart summary"
                 "chart1 chart1 chart1"
                 "chart2 chart2 chart2"
-                "chart3 chart3 chart3";
+                "chart3 chart3 chart3"
+                "chart4 chart4 chart4";
         }
 
         .card {
@@ -94,7 +95,7 @@
 <body bgcolor="#d1cfce">
     <div class="container">
         <div class="header">Filter by number of cases
-            <input type="text" id="limit" name="limit" value="5000" onchange="change_limit()">
+            <input type="text" id="limit" name="limit" value="10000" onchange="change_limit()">
             <br>
             Country <select id="country" onchange="change_country()"></select>
         </div>
@@ -121,6 +122,7 @@
         <div class="card" style="grid-area: chart1;" id="chart1"></div>
         <div class="card" style="grid-area: chart2;" id="chart2"></div>
         <div class="card" style="grid-area: chart3;" id="chart3"></div>
+        <div class="card" style="grid-area: chart4;" id="chart4"></div>
     </div>
     <script>
         let has_loaded = false;
@@ -193,7 +195,8 @@
 
             build_chart(cleaned, 'confirmed', 'chart1', 'datetime', 'Cases by Country', 'Cases');
             build_chart(cleaned, 't100', 'chart2', 'linear', 'Cases since first 100', 'Cases');
-            build_chart(cleaned, 'dRate', 'chart3', 'datetime', 'Deaths per 100 Cases', 'Deaths');
+            build_chart(cleaned, 'deaths', 'chart3', 'datetime', 'Deaths', 'Deaths');
+            build_chart(cleaned, 'dRate', 'chart4', 'datetime', 'Deaths per 100 Cases', 'Deaths');
         }
 
         function get_summary_deltas(data, series, element) {
