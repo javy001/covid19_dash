@@ -21,6 +21,7 @@
             grid-template-areas:
                 "header header . "
                 "country_chart country_chart summary"
+                "growth_chart growth_chart growth_chart "
                 "chart1 chart1 chart1"
                 "chart2 chart2 chart2"
                 "chart3 chart3 chart3"
@@ -119,6 +120,7 @@
                 w/w: <span id="deaths_w_growth"></span>
             </div>
         </div>
+        <div class="card" style="grid-area: growth_chart;" id="growth_chart"></div>
         <div class="card" style="grid-area: chart1;" id="chart1"></div>
         <div class="card" style="grid-area: chart2;" id="chart2"></div>
         <div class="card" style="grid-area: chart3;" id="chart3"></div>
@@ -190,6 +192,7 @@
                     continue;
                 }
                 build_country_chart(overall[i], 'country_chart', overall[i]['name']);
+                build_country_chart(get_growth(overall[i]),'growth_chart', overall[i]['name'] + " Growth");
                 build_summary(overall[i]); 
             }
 
@@ -197,6 +200,32 @@
             build_chart(cleaned, 't100', 'chart2', 'linear', 'Cases since first 100', 'Cases');
             build_chart(cleaned, 'deaths', 'chart3', 'datetime', 'Deaths', 'Deaths');
             build_chart(cleaned, 'dRate', 'chart4', 'datetime', 'Deaths per 100 Cases', 'Deaths');
+        }
+
+        function get_growth(data) {
+            confirmed_growth = [];
+            death_growth = [];
+            for(var i=1; i<data['confirmed'].length; i++) {
+                let day = data['confirmed'][i];
+                var delta = ((day[1]/data['confirmed'][i-1][1]-1)*100).toFixed(2);
+                if(isNaN(delta) || !isFinite(delta)) {
+                    delta = 0;
+                }
+                confirmed_growth.push([day[0], parseFloat(delta)]);
+
+                let day1 = data['deaths'][i];
+                let delta1 = ((day1[1]/data['deaths'][i-1][1]-1)*100).toFixed(2);
+                if(isNaN(delta1) || !isFinite(delta1)) {
+                    delta1 = 0;
+                }
+                death_growth.push([day1[0], parseFloat(delta1)]);
+            }
+            let new_data = {
+                confirmed: confirmed_growth,
+                deaths: death_growth
+            };
+
+            return new_data;
         }
 
         function get_summary_deltas(data, series, element) {
@@ -308,6 +337,9 @@
                     text: title
                 },
                 yAxis: [{
+                    labels: {
+                    format: '{value}%'
+                    },
                     title: {
                         text: 'Cases',
                         style: {
@@ -316,6 +348,9 @@
                     },
 
                 },{
+                    labels: {
+                    format: '{value}%'
+                    },
                     title: {
                         text: 'Deaths',
                         style: {
