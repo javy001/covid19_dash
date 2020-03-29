@@ -191,8 +191,8 @@
                 if (overall[i]['name'] != country) {
                     continue;
                 }
-                build_country_chart(overall[i], 'country_chart', overall[i]['name']);
-                build_country_chart(get_growth(overall[i]),'growth_chart', overall[i]['name'] + " Growth");
+                build_country_chart(overall[i], 'country_chart', overall[i]['name'], '');
+                build_country_chart(get_growth(overall[i]),'growth_chart', overall[i]['name'] + " Growth", '%');
                 build_summary(overall[i]); 
             }
 
@@ -322,7 +322,7 @@
             });
         }
 
-        function build_country_chart(data, id, title) {
+        function build_country_chart(data, id, title, format) {
             Highcharts.chart(id, {
                 xAxis: {
                     type: 'datetime'
@@ -337,9 +337,6 @@
                     text: title
                 },
                 yAxis: [{
-                    labels: {
-                    format: '{value}%'
-                    },
                     title: {
                         text: 'Cases',
                         style: {
@@ -348,9 +345,6 @@
                     },
 
                 },{
-                    labels: {
-                    format: '{value}%'
-                    },
                     title: {
                         text: 'Deaths',
                         style: {
