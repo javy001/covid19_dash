@@ -238,8 +238,8 @@
             let ww = ((metric/m7)-1)*100;
             let dd1 = (m1/m2-1)*100;
             let ww1 = (m1/m8-1)*100;
-            let daily_delta = (dd1-dd).toFixed(2);
-            let weekly_delta = (ww1-ww).toFixed(2);
+            let daily_delta = (dd-dd1).toFixed(2);
+            let weekly_delta = (ww-ww1).toFixed(2);
             var d_sign = "";
             let daily_element = document.getElementById(element+'_d_growth');
             if(daily_delta > 0) {
