@@ -293,6 +293,9 @@
                 data[i]['data'] = data[i][series];
             }
             Highcharts.chart(id, {
+                chart: {
+                        zoomType: 'xy'
+                },
                 xAxis: {
                     type: chartType
                 },
@@ -324,6 +327,9 @@
 
         function build_country_chart(data, id, title, format) {
             Highcharts.chart(id, {
+                chart: {
+                        zoomType: 'xy'
+                },
                 xAxis: {
                     type: 'datetime'
                 },
